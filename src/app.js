@@ -5,7 +5,7 @@ import { buildLetter } from './letter.js';
 import { sampleCsv } from './sample.js';
 import { STRINGS, pickLang } from './i18n.js';
 
-const REPO_URL = 'https://github.com/vqorn/geldleck';
+const REPO_URL = 'https://github.com/vqorn/plugtheleak';
 
 const ICONS = {
   video: '🎬', music: '🎵', audio: '🎧', software: '💻', cloud: '☁️', ai: '🤖', news: '📰',
@@ -356,15 +356,19 @@ function findItem(id) {
 
 function exportCsv() {
   const s = t();
-  const head = ['Name', 'Kategorie', 'Rhythmus', 'Betrag', 'Pro Jahr', 'Zuletzt', 'Nächste', 'Aktiv'];
+  const de = state.lang === 'de';
+  const head = de
+    ? ['Name', 'Kategorie', 'Rhythmus', 'Betrag', 'Pro Jahr', 'Zuletzt', 'Nächste', 'Aktiv']
+    : ['Name', 'Category', 'Cadence', 'Amount', 'Per year', 'Last', 'Next', 'Active'];
+  const num = (n) => (de ? n.toFixed(2).replace('.', ',') : n.toFixed(2));
   const rows = state.result.items
     .filter((i) => !state.hidden.has(i.id))
-    .map((i) => [i.name, s.categories[i.category], s.cadence[i.cadence], i.amount.toFixed(2).replace('.', ','), i.yearly.toFixed(2).replace('.', ','), formatDate(i.last), formatDate(i.next), i.active ? 'ja' : 'nein']);
-  const csv = [head, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\r\n');
-  const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
+    .map((i) => [i.name, s.categories[i.category], s.cadence[i.cadence], num(i.amount), num(i.yearly), formatDate(i.last), formatDate(i.next), i.active ? (de ? 'ja' : 'yes') : (de ? 'nein' : 'no')]);
+  const csv = [head, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(de ? ';' : ',')).join('\r\n');
+  const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }));
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'abos.csv';
+  a.download = de ? 'abos.csv' : 'subscriptions.csv';
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
@@ -425,7 +429,7 @@ window.addEventListener('drop', (e) => {
 document.getElementById('lang').addEventListener('click', () => {
   state.lang = state.lang === 'de' ? 'en' : 'de';
   try {
-    localStorage.setItem('geldleck-lang', state.lang);
+    localStorage.setItem('plugtheleak-lang', state.lang);
   } catch {
     // storage blocked: language just won't be remembered
   }

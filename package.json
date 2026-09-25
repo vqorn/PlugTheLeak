@@ -1,5 +1,5 @@
 {
-  "name": "geldleck",
+  "name": "plugtheleak",
   "version": "1.0.0",
   "description": "Find every subscription in your bank statement and cancel it. 100% local, in your browser.",
   "type": "module",

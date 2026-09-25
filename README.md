@@ -1,108 +1,102 @@
 <div align="center">
 
-# 💧 Geldleck
+# 💧 PlugTheLeak
 
-**Finde die Lecks in deinem Konto.**
+**Plug the leaks in your bank account.**
 
-Kontoauszug rein, alle Abos raus. Und direkt kündigen.
+Drop in your bank statement, get every subscription out, and cancel what you don't need.
+Free, no sign-up, and your bank data never leaves your browser.
 
-Findet jedes Abo und jeden Vertrag in deinem Kontoauszug, zeigt dir, was dich das im Jahr kostet, entdeckt heimliche Preiserhöhungen und schreibt dir die Kündigung.
-Kostenlos, ohne Anmeldung, und deine Bankdaten verlassen nie deinen Browser.
+**[➜ Try it now](https://vqorn.github.io/plugtheleak/)** · [Deutsch](#deutsch)
 
-**[➜ Jetzt ausprobieren](https://vqorn.github.io/geldleck/)** · [English](#english)
-
-<img src="docs/results.png" alt="Geldleck zeigt 7 Abos für 1.454 € im Jahr" width="620">
+<img src="docs/results.png" alt="PlugTheLeak finds 7 subscriptions costing €1,454 a year" width="620">
 
 </div>
 
-## Warum?
+## Why?
 
-Die meisten Leute zahlen für Abos, die sie vergessen haben: die Testversion, die still weiterläuft, das Fitnessstudio aus dem Januar, der Streamingdienst für eine einzige Serie. Apps wie Finanzguru finden das auch, wollen dafür aber Zugriff auf dein Bankkonto und in der Premium-Version Geld.
+Most people pay for subscriptions they forgot about: the free trial that quietly turned into a paid plan, the gym from January, the streaming service you signed up to for one show. Apps that find them usually want full access to your bank account, a monthly fee, or both.
 
-Geldleck braucht nur die CSV-Datei, die dir jedes Online-Banking gibt. Alles wird auf deinem eigenen Gerät ausgewertet.
+PlugTheLeak only needs the CSV file every online bank lets you download. Everything is analysed on your own device.
 
-## Was es kann
+## Features
 
-- 🔍 **Findet wiederkehrende Zahlungen** automatisch: wöchentlich, monatlich, vierteljährlich, halbjährlich, jährlich
-- 💶 **Zeigt die echten Kosten**: pro Monat und pro Jahr, getrennt nach Abos und Fixkosten wie Miete oder Versicherung
-- 📈 **Entdeckt Preiserhöhungen**, z. B. „Netflix: 12,99 € → 13,99 €“
-- 💸 **Spar-Rechner**: Hak an, was du nicht brauchst, und sieh sofort, wie viel du sparst
-- ✉️ **Kündigungsschreiben** mit einem Klick, inkl. Widerruf der SEPA-Lastschrift, zum Kopieren, Mailen oder Drucken
-- 🔗 **Direktlinks zur Kündigungsseite** bei bekannten Anbietern
-- 🧾 **PayPal-Zahlungen** werden dem echten Händler zugeordnet (z. B. „Ihr Einkauf bei Spotify“)
-- 🏦 **Über 110 bekannte Anbieter** (Streaming, Handy, Fitness, Software, KI, Zeitungen, Versicherungen …)
-- 🌙 Dark Mode, Handy-tauglich, Deutsch und Englisch
+- 🔍 **Finds recurring payments** automatically: weekly, monthly, quarterly, every six months, yearly
+- 💶 **Shows the real cost** per month and per year, with subscriptions kept apart from fixed costs like rent or insurance
+- 📈 **Spots price increases**, e.g. "Netflix: €12.99 → €13.99"
+- 💸 **Savings calculator**: tick what you don't need and instantly see how much you save per year
+- ✉️ **Cancellation letter** in one click, including revoking the direct debit, ready to copy, e-mail or print
+- 🔗 **Direct links to the cancel page** of well-known providers
+- 🧾 **PayPal payments** are traced back to the real merchant ("Your purchase at Spotify")
+- 🏦 **110+ known providers** (streaming, mobile, gyms, software, AI, news, insurance …)
+- 🌙 Dark mode, works on phones, English and German
 
-## Unterstützte Banken
+## Supported banks
 
-Getestet mit den CSV-Exporten von:
+Tested with CSV exports from:
 
 **Sparkasse** · **DKB** · **ING** · **N26** · **Comdirect** · **Commerzbank** · **Deutsche Bank** · **Postbank** · **Volksbank / Raiffeisenbank** · **Revolut** · **PayPal**
 
-Andere Banken klappen meistens auch, weil die Spalten automatisch erkannt werden. Wenn deine Bank nicht geht: [Issue aufmachen](https://github.com/vqorn/geldleck/issues) mit den Spaltenüberschriften (bitte **keine** echten Buchungen posten).
+Columns are detected automatically, so many other banks work too. German banks are the best covered so far. If yours doesn't work, [open an issue](https://github.com/vqorn/plugtheleak/issues) with the column headers of your export (please **don't** post real transactions).
 
-## So geht's
+## How it works
 
-1. Im Online-Banking die Umsätze als **CSV** exportieren, am besten **12 Monate**.
-2. Datei auf [vqorn.github.io/geldleck](https://vqorn.github.io/geldleck/) ziehen.
-3. Liste durchgehen, abhaken, kündigen. Fertig.
+1. Export your transactions from online banking as **CSV**, ideally for **12 months**.
+2. Drop the file onto [vqorn.github.io/plugtheleak](https://vqorn.github.io/plugtheleak/).
+3. Go through the list, tick, cancel. Done.
 
-Keine Datei zur Hand? Auf der Seite gibt es einen Knopf **„Mit Beispieldaten ausprobieren“**.
+No file at hand? Click **"Try it with sample data"** on the page.
 
-## Datenschutz, und zwar wirklich
+## Privacy, for real
 
-- Es gibt **keinen Server**. Die Seite ist eine statische HTML-Datei.
-- Die Seite hat eine Content-Security-Policy mit `connect-src 'none'`. Das heißt: Der Browser **verbietet** der Seite technisch, irgendetwas zu senden. Selbst wenn sie wollte, könnte sie es nicht.
-- Kein Tracking, keine Cookies, keine Analytics, keine externen Schriftarten oder Skripte.
-- Du willst es ganz sicher? Lade `index.html` aus dem [neuesten Build](https://vqorn.github.io/geldleck/) herunter (Rechtsklick, „Seite speichern unter“), schalte das WLAN aus und öffne die Datei. Funktioniert komplett offline.
+- There is **no server**. The page is a single static HTML file.
+- The page ships a Content Security Policy with `connect-src 'none'`. Your browser **forbids** the page from sending anything anywhere. Even if it wanted to, it couldn't.
+- No tracking, no cookies, no analytics, no external fonts or scripts.
+- Want to be sure? Save the [page](https://vqorn.github.io/plugtheleak/) (right click, "Save as"), turn off your Wi-Fi and open the file. It works completely offline.
 
-## Grenzen (ehrlich gesagt)
+## Limitations (honestly)
 
-- Die Erkennung ist eine **Schätzung**. Zwei Zahlungen im gleichen Abstand sind noch kein Abo, und manchmal übersieht es was. Deshalb kannst du alles ausblenden oder aufklappen und prüfen.
-- Jahresabos erkennt es sicher erst, wenn zwei Zahlungen im Zeitraum liegen. Bekannte Anbieter mit nur einer Zahlung landen unter „Möglicherweise auch ein Abo“.
-- Das Kündigungsschreiben ist eine Vorlage, **keine Rechtsberatung**.
+- Detection is an **estimate**. Two payments at the same interval aren't necessarily a subscription, and sometimes it misses one. That's why you can hide any entry and expand it to see the underlying transactions.
+- Yearly plans are only detected reliably once two payments fall inside the date range. Known providers with a single payment are listed under "Possibly a subscription too".
+- The cancellation letter is a template, **not legal advice**.
 
-## Mitmachen
+## Contributing
 
-Am meisten hilft: **neue Anbieter** in [`src/merchants.js`](src/merchants.js) eintragen. Das ist eine einfache Liste:
+The most helpful contribution: **add providers** to [`src/merchants.js`](src/merchants.js). It's a simple list:
 
 ```js
 { name: 'Netflix', re: /netflix/i, cat: 'video', url: 'https://www.netflix.com/cancelplan' },
 ```
 
-`url` bitte nur, wenn es wirklich die offizielle Kündigungs- oder Konto-Seite ist. Und ein neues Bankformat gerne mit einem Test in [`test/formats.test.js`](test/formats.test.js) (nur ausgedachte Buchungen!).
+Only add a `url` if it really is the official cancel or account page. New bank formats are very welcome too, ideally with a test in [`test/formats.test.js`](test/formats.test.js) (made-up transactions only!).
 
-### Entwickeln
+### Development
 
-Keine Abhängigkeiten, nur Node.js ≥ 20:
+No dependencies, just Node.js ≥ 20:
 
 ```bash
-npm test          # Tests
-npm run dev       # lokaler Server auf http://localhost:8080
-npm run build     # baut dist/index.html (eine einzige Datei, läuft auch offline)
+npm test          # run the tests
+npm run dev       # local server on http://localhost:8080
+npm run build     # builds dist/index.html (one single file that also works offline)
 ```
 
 ```
-src/csv.js        CSV lesen (Encoding, Trennzeichen, Anführungszeichen)
-src/columns.js    Bankformate erkennen, Beträge und Datumsangaben parsen
-src/merchants.js  bekannte Anbieter und Kategorien
-src/detect.js     Erkennung der wiederkehrenden Zahlungen
-src/letter.js     Kündigungsschreiben
-src/app.js        Oberfläche
+src/csv.js        reading CSV (encoding, delimiter, quotes)
+src/columns.js    detecting bank formats, parsing amounts and dates
+src/merchants.js  known providers and categories
+src/detect.js     recurring payment detection
+src/letter.js     cancellation letters
+src/app.js        user interface
 ```
 
 ---
 
-## English
+## Deutsch
 
-**Find the leaks in your bank account.** Drop in your bank statement, get every subscription out, then cancel it.
+**Finde die Lecks in deinem Konto.** Kontoauszug als CSV reinziehen, alle Abos und Verträge sehen, heimliche Preiserhöhungen entdecken und mit einem Klick das Kündigungsschreiben erstellen. Läuft zu 100 % im Browser, ohne Anmeldung, ohne Server. Unterstützt Sparkasse, DKB, ING, N26, Comdirect, Commerzbank, Deutsche Bank, Postbank, Volksbank, Revolut und PayPal. Die App erkennt einen deutschen Browser und startet dann automatisch auf Deutsch.
 
-Geldleck finds recurring payments in a bank CSV export, shows what they cost per year, spots price increases and writes the cancellation letter for you. It runs 100% in your browser: no server, no account, and a `connect-src 'none'` CSP that makes it technically impossible for the page to send your data anywhere. Works offline as a single HTML file.
+**[➜ Jetzt ausprobieren](https://vqorn.github.io/plugtheleak/)**
 
-Built for German banks first (Sparkasse, DKB, ING, N26, Comdirect, Commerzbank, Deutsche Bank, Postbank, Volksbank), plus Revolut and PayPal. Columns are auto-detected, so many other banks work too. The UI is available in German and English.
-
-**[➜ Try it](https://vqorn.github.io/geldleck/)**
-
-## Lizenz
+## License
 
 [MIT](LICENSE)
