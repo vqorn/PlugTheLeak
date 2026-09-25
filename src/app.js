@@ -7,11 +7,30 @@ import { STRINGS, pickLang } from './i18n.js';
 
 const REPO_URL = 'https://github.com/vqorn/PlugTheLeak';
 
-const ICONS = {
-  video: '🎬', music: '🎵', audio: '🎧', software: '💻', cloud: '☁️', ai: '🤖', news: '📰',
-  fitness: '💪', gaming: '🎮', dating: '💘', learning: '🎓', mobile: '📱', internet: '🌐', tv: '📺',
-  food: '🍝', mobility: '🚆', insurance: '🛡️', energy: '⚡', broadcast: '📻', housing: '🏠',
-  finance: '🏦', charity: '💚', shopping: '🛒', other: '🔁',
+// Line icons, drawn on a 24px grid with a 1.6px stroke.
+const ICON = {
+  lock: '<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
+  letter: '<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4 7.5 8 5.5 8-5.5"/>',
+  file: '<path d="M14 3H7.5A2.5 2.5 0 0 0 5 5.5v13A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5V8z"/><path d="M14 3v5h5"/><path d="M12 17.5v-6m-2.75 2.75L12 11.5l2.75 2.75"/>',
+  chevron: '<path d="m9 5.5 6.5 6.5L9 18.5"/>',
+  down: '<path d="m5.5 9 6.5 6.5L18.5 9"/>',
+  close: '<path d="M6 6l12 12M18 6 6 18"/>',
+  external: '<path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/>',
+  trend: '<path d="m4 16 5-5 4 4 7-7"/><path d="M15 8h5v5"/>',
+};
+
+function icon(name, cls = '') {
+  return `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICON[name]}</svg>`;
+}
+
+// Tile colours per category, loosely following the system palette of iOS.
+const TILE = {
+  video: '#ff3b30', music: '#ff2d55', audio: '#ff9500', software: '#007aff', cloud: '#32ade6',
+  ai: '#5856d6', news: '#8e8e93', fitness: '#34c759', gaming: '#af52de', dating: '#ff2d55',
+  learning: '#30b0c7', mobile: '#007aff', internet: '#5ac8fa', tv: '#5856d6', food: '#ff9500',
+  mobility: '#34c759', insurance: '#a2845e', energy: '#ff9f0a', broadcast: '#8e8e93',
+  housing: '#a2845e', finance: '#30b0c7', charity: '#34c759', shopping: '#ff9500', other: '#8e8e93',
 };
 
 // Mandatory or not cancellable in a meaningful way.
@@ -36,14 +55,21 @@ function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 }
 
-function money(n) {
-  return new Intl.NumberFormat(state.lang === 'de' ? 'de-DE' : 'en-IE', { style: 'currency', currency: 'EUR' }).format(n);
+function money(n, digits = 2) {
+  return new Intl.NumberFormat(state.lang === 'de' ? 'de-DE' : 'en-IE', {
+    style: 'currency', currency: 'EUR', minimumFractionDigits: digits, maximumFractionDigits: digits,
+  }).format(n);
 }
 
 function formatDate(ms) {
   return new Date(ms).toLocaleDateString(state.lang === 'de' ? 'de-DE' : 'en-GB', {
-    day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC',
+    day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
   });
+}
+
+function tile(item) {
+  const letter = (item.name.match(/\p{L}|\d/u) || ['?'])[0].toUpperCase();
+  return `<span class="tile" style="background:${TILE[item.category] || TILE.other}" aria-hidden="true">${esc(letter)}</span>`;
 }
 
 // ---------- Loading files ----------
@@ -92,160 +118,178 @@ function loadDemo() {
   loadTransactions(transactions, error);
 }
 
-// ---------- Rendering ----------
+// ---------- Start page ----------
 
 function renderStart() {
   const s = t();
+  const featureIcons = ['lock', 'search', 'letter'];
   return `
     <section class="hero">
-      <h1>${esc(s.tagline)}</h1>
-      <p class="privacy">🔒 ${esc(s.privacy)}</p>
-    </section>
-    <label class="drop" id="drop" tabindex="0">
+      <p class="eyebrow">${esc(s.eyebrow)}</p>
+      <h1>${esc(s.heroA)}<br><span class="dim">${esc(s.heroB)}</span></h1>
+      <p class="lead">${esc(s.lead)}</p>
+      <div class="cta">
+        <label class="pill primary" for="file">${esc(s.choose)}</label>
+        <button class="textlink" data-action="demo">${esc(s.demo)} ${icon('chevron', 'sm')}</button>
+      </div>
       <input type="file" id="file" accept=".csv,.txt,text/csv" multiple hidden>
-      <span class="drop-icon">📄</span>
-      <strong>${esc(s.dropTitle)}</strong>
-      <span class="muted">${esc(s.dropOr)}</span>
-      <span class="btn primary">${esc(s.choose)}</span>
-    </label>
-    ${state.loading ? `<p class="center muted">${esc(s.reading)}</p>` : ''}
-    ${state.error ? `<p class="error" role="alert">${esc(state.error)}</p>` : ''}
-    <p class="center"><button class="btn link" data-action="demo">✨ ${esc(s.demo)}</button></p>
-    <details class="how">
-      <summary>${esc(s.howTitle)}</summary>
-      <ol>${s.howSteps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>
-      <p class="muted">${esc(s.howBanks)}</p>
-    </details>`;
+    </section>
+
+    <section class="drop" id="drop" tabindex="0" role="button" aria-label="${esc(s.choose)}">
+      ${icon('file', 'xl')}
+      <p class="drop-title">${esc(s.dropTitle)}</p>
+      <p class="drop-hint">${esc(s.dropHint)}</p>
+      ${state.loading ? `<p class="drop-hint">${esc(s.reading)}</p>` : ''}
+    </section>
+    ${state.error ? `<p class="notice" role="alert">${esc(state.error)}</p>` : ''}
+
+    <section class="features">
+      ${s.features.map(([title, text], i) => `
+        <article class="feature">
+          ${icon(featureIcons[i], 'lg')}
+          <h3>${esc(title)}</h3>
+          <p>${esc(text)}</p>
+        </article>`).join('')}
+    </section>
+
+    <section class="how">
+      <h2>${esc(s.howTitle)}</h2>
+      <ol class="steps">${s.howSteps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>
+      <p class="fine">${esc(s.howBanks)}</p>
+    </section>`;
 }
 
-function badge(text, cls = '') {
-  return `<span class="badge ${cls}">${esc(text)}</span>`;
-}
+// ---------- Results ----------
 
-function renderItem(item, { ended = false, hidden = false } = {}) {
+function renderRow(item, { ended = false, hidden = false } = {}) {
   const s = t();
   const marked = state.marked.has(item.id);
-  const cancellable = !ended && !hidden && !NOT_CANCELLABLE.has(item.category);
   const open = state.open.has(item.id);
-  const badges = [];
-  if (item.priceChange) badges.push(badge(s.priceUp(money(item.priceChange.from), money(item.priceChange.to)), 'warn'));
-  if (item.variable) badges.push(badge(s.variable));
-  if (item.directDebit) badges.push(badge(s.directDebit, 'soft'));
+  const cancellable = !ended && !hidden && !NOT_CANCELLABLE.has(item.category);
+  const tags = [];
+  if (item.priceChange) tags.push(`<span class="tag warn">${icon('trend', 'xs')} ${esc(s.priceUp(money(item.priceChange.from), money(item.priceChange.to)))}</span>`);
+  if (item.variable) tags.push(`<span class="tag">${esc(s.variable)}</span>`);
+  if (item.directDebit) tags.push(`<span class="tag">${esc(s.directDebit)}</span>`);
+
   return `
-    <article class="item ${marked ? 'marked' : ''} ${ended ? 'ended' : ''}" data-id="${esc(item.id)}">
-      <div class="item-main">
-        ${cancellable ? `<label class="check" title="${esc(s.dontNeed)}"><input type="checkbox" data-action="mark" ${marked ? 'checked' : ''} aria-label="${esc(s.dontNeed)}: ${esc(item.name)}"></label>` : ''}
-        <div class="icon" aria-hidden="true">${ICONS[item.category] || '🔁'}</div>
-        <div class="info">
-          <div class="name">${esc(item.name)}</div>
-          <div class="meta">${esc(s.categories[item.category])} · ${esc(s.cadence[item.cadence])} · ${esc(s.lastPaid)} ${formatDate(item.last)}${!ended ? ` · ${esc(s.nextDue)} ${formatDate(item.next)}` : ''}</div>
-          ${badges.length ? `<div class="badges">${badges.join('')}</div>` : ''}
+    <li class="row ${marked ? 'marked' : ''} ${ended ? 'ended' : ''} ${open ? 'open' : ''}" data-id="${esc(item.id)}">
+      <div class="row-main" data-action="toggle" role="button" tabindex="0" aria-expanded="${open}">
+        ${cancellable ? `<input type="checkbox" class="check" data-action="mark" ${marked ? 'checked' : ''} aria-label="${esc(s.dontNeed)}: ${esc(item.name)}">` : '<span class="check-space"></span>'}
+        ${tile(item)}
+        <div class="row-text">
+          <span class="row-name">${esc(item.name)}</span>
+          <span class="row-meta">${esc(s.categories[item.category])} · ${esc(s.cadence[item.cadence])}</span>
         </div>
-        <div class="price">
-          <div class="amount">${item.variable ? '~' : ''}${money(item.amount)}</div>
-          <div class="yearly">${money(item.yearly)}${esc(s.perYearShort)}</div>
+        <div class="row-price">
+          <span class="row-amount">${item.variable ? '~' : ''}${money(item.amount)}</span>
+          <span class="row-yearly">${money(item.yearly)}${esc(s.perYearShort)}</span>
+        </div>
+        ${icon('chevron', 'row-chev')}
+      </div>
+      ${open ? `
+        <div class="row-more">
+          ${tags.length ? `<div class="tags">${tags.join('')}</div>` : ''}
+          <dl class="facts">
+            <div><dt>${esc(s.lastPaid)}</dt><dd>${formatDate(item.last)}</dd></div>
+            ${!ended ? `<div><dt>${esc(s.nextDue)}</dt><dd>${formatDate(item.next)}</dd></div>` : ''}
+          </dl>
+          <ul class="tx">${item.transactions.slice().reverse().map((x) => `
+            <li><span>${formatDate(x.date)}</span><span class="tx-text">${esc(x.text)}</span><span>${money(x.amount)}</span></li>`).join('')}
+          </ul>
+          <div class="row-actions">
+            ${cancellable ? `<button class="pill primary small" data-action="cancel">${esc(s.cancel)}</button>` : ''}
+            <button class="textlink" data-action="${hidden ? 'unhide' : 'hide'}">${esc(hidden ? s.restore : s.hide)}</button>
+          </div>
+        </div>` : ''}
+    </li>`;
+}
+
+function renderMaybe(m) {
+  const s = t();
+  return `
+    <li class="row" data-id="${esc(m.id)}">
+      <div class="row-main static">
+        <span class="check-space"></span>
+        ${tile(m)}
+        <div class="row-text">
+          <span class="row-name">${esc(m.name)}</span>
+          <span class="row-meta">${esc(s.categories[m.category])} · ${esc(s.onlyOnce(formatDate(m.last)))}</span>
+        </div>
+        <div class="row-price"><span class="row-amount">${money(m.amount)}</span></div>
+        <div class="row-inline-actions">
+          <button class="textlink" data-action="cancel-maybe">${esc(s.cancelShort)}</button>
+          <button class="iconbtn" data-action="hide" aria-label="${esc(s.hide)}">${icon('close', 'sm')}</button>
         </div>
       </div>
-      <div class="actions">
-        ${cancellable ? `<button class="btn small danger" data-action="cancel">✂️ ${esc(s.cancel)}</button>` : ''}
-        <button class="btn small ghost" data-action="toggle" aria-expanded="${open}">${esc(s.details)} (${item.count})</button>
-        <button class="btn small ghost" data-action="${hidden ? 'unhide' : 'hide'}">${esc(hidden ? s.restore : s.hide)}</button>
-      </div>
-      ${open ? `<ul class="tx">${item.transactions
-        .slice()
-        .reverse()
-        .map((x) => `<li><span>${formatDate(x.date)}</span><span class="tx-text">${esc(x.text)}</span><span>${money(x.amount)}</span></li>`)
-        .join('')}</ul>` : ''}
-    </article>`;
+    </li>`;
+}
+
+function group(title, rows, hint = '') {
+  return `
+    <section class="group">
+      <h2 class="group-title">${esc(title)}</h2>
+      ${hint ? `<p class="group-hint">${esc(hint)}</p>` : ''}
+      <ul class="list">${rows}</ul>
+    </section>`;
 }
 
 function renderResults() {
   const s = t();
   const r = state.result;
   const visible = r.items.filter((i) => !state.hidden.has(i.id));
-  const filtered = visible.filter((i) => state.filter === 'all' || i.subscription);
+  const subsView = state.filter === 'subs';
+  const filtered = visible.filter((i) => !subsView || i.subscription);
   const active = filtered.filter((i) => i.active);
   const ended = filtered.filter((i) => !i.active);
   const hidden = r.items.filter((i) => state.hidden.has(i.id));
   const maybe = r.maybe.filter((i) => !state.hidden.has(i.id));
   const sum = summarize(visible);
-  const subsView = state.filter === 'subs';
   const headline = subsView ? sum.subsYearly : sum.yearly;
   const headCount = subsView ? sum.subsCount : sum.activeCount;
-  const markedItems = visible.filter((i) => i.active && state.marked.has(i.id));
-  const saveYear = markedItems.reduce((a, i) => a + i.yearly, 0);
+  const saveYear = visible.filter((i) => i.active && state.marked.has(i.id)).reduce((a, i) => a + i.yearly, 0);
 
   return `
-    <div class="toolbar">
-      <div class="seg" role="group">
-        <button class="${state.filter === 'all' ? 'on' : ''}" data-action="filter" data-value="all">${esc(s.filterAll)}</button>
-        <button class="${state.filter === 'subs' ? 'on' : ''}" data-action="filter" data-value="subs">${esc(s.filterSubs)}</button>
-      </div>
+    <div class="seg" role="tablist">
+      <button role="tab" aria-selected="${!subsView}" class="${!subsView ? 'on' : ''}" data-action="filter" data-value="all">${esc(s.filterAll)}</button>
+      <button role="tab" aria-selected="${subsView}" class="${subsView ? 'on' : ''}" data-action="filter" data-value="subs">${esc(s.filterSubs)}</button>
     </div>
-    <section class="summary">
-      <div class="big">
-        <div class="big-value">${money(headline)}</div>
-        <div class="big-label">${esc(subsView ? s.summaryYearlySubs : s.summaryYearly)}</div>
-      </div>
-      <div class="stats">
-        <div><strong>${money(headline / 12)}</strong><span>${esc(s.summaryMonthly)}</span></div>
-        <div><strong>${headCount}</strong><span>${esc(subsView ? s.summarySubsCount(headCount) : s.summaryCount(headCount))}</span></div>
-      </div>
-      <p>${esc(subsView ? s.summaryAll(money(sum.yearly)) : s.summarySubs(sum.subsCount, money(sum.subsYearly)))}</p>
-      ${sum.priceIncreases ? `<p class="alert">📈 ${esc(s.priceAlerts(sum.priceIncreases))}</p>` : ''}
-      <p class="muted small">${esc(s.summaryRange(formatDate(r.range.start), formatDate(r.range.end), r.count))}</p>
+
+    <section class="total">
+      <p class="eyebrow plain">${esc(subsView ? s.costSubs : s.costAll)}</p>
+      <p class="total-value">${money(headline, 0)}</p>
+      <p class="total-sub">${esc(s.perYearLong)}</p>
+      <p class="total-line">${esc(s.monthlyLine(money(headline / 12), headCount, subsView))}</p>
+      ${sum.priceIncreases ? `<p class="total-alert">${icon('trend', 'xs')} ${esc(s.priceAlerts(sum.priceIncreases))}</p>` : ''}
+      <p class="fine">${esc(subsView ? s.summaryAll(money(sum.yearly)) : s.summarySubs(sum.subsCount, money(sum.subsYearly)))}</p>
+      <p class="fine">${esc(s.summaryRange(formatDate(r.range.start), formatDate(r.range.end), r.count))}</p>
     </section>
 
-    <div class="savings ${saveYear ? 'on' : ''}" aria-live="polite">
-      ${saveYear ? `💸 ${esc(s.savings(money(saveYear), money(saveYear / 12)))}` : esc(s.savingsHint)}
-    </div>
-
-    <h2>${esc(s.sectionActive)}</h2>
-    <div class="list">${active.map((i) => renderItem(i)).join('')}</div>
-
-    ${maybe.length ? `
-      <h2>${esc(s.sectionMaybe)}</h2>
-      <p class="muted small">${esc(s.sectionMaybeHint)}</p>
-      <div class="list">${maybe.map(renderMaybe).join('')}</div>` : ''}
+    ${group(s.sectionActive, active.map((i) => renderRow(i)).join(''), s.savingsHint)}
+    ${maybe.length ? group(s.sectionMaybe, maybe.map(renderMaybe).join(''), s.sectionMaybeHint) : ''}
 
     ${ended.length ? `
-      <details class="section">
-        <summary><h2>${esc(s.sectionEnded)} (${ended.length})</h2></summary>
-        <p class="muted small">${esc(s.sectionEndedHint)}</p>
-        <div class="list">${ended.map((i) => renderItem(i, { ended: true })).join('')}</div>
+      <details class="group fold">
+        <summary class="group-title">${esc(s.sectionEnded)} <span class="count">${ended.length}</span>${icon('down', 'sm fold-ic')}</summary>
+        <p class="group-hint">${esc(s.sectionEndedHint)}</p>
+        <ul class="list">${ended.map((i) => renderRow(i, { ended: true })).join('')}</ul>
       </details>` : ''}
 
     ${hidden.length ? `
-      <details class="section">
-        <summary><h2>${esc(s.sectionHidden)} (${hidden.length})</h2></summary>
-        <div class="list">${hidden.map((i) => renderItem(i, { hidden: true })).join('')}</div>
+      <details class="group fold">
+        <summary class="group-title">${esc(s.sectionHidden)} <span class="count">${hidden.length}</span>${icon('down', 'sm fold-ic')}</summary>
+        <ul class="list">${hidden.map((i) => renderRow(i, { hidden: true })).join('')}</ul>
       </details>` : ''}
 
-    <div class="bottom-actions">
-      <button class="btn" data-action="export">⬇️ ${esc(s.exportCsv)}</button>
-      <button class="btn" data-action="print">🖨️ ${esc(s.print)}</button>
-      <button class="btn" data-action="reset">↩️ ${esc(s.startOver)}</button>
-    </div>
-    <p class="muted small center">${esc(s.disclaimer)}</p>`;
-}
+    <nav class="links">
+      <button class="textlink" data-action="export">${esc(s.exportCsv)}</button>
+      <button class="textlink" data-action="print">${esc(s.print)}</button>
+      <button class="textlink" data-action="reset">${esc(s.startOver)}</button>
+    </nav>
+    <p class="fine center">${esc(s.disclaimer)}</p>
 
-function renderMaybe(m) {
-  const s = t();
-  return `
-    <article class="item maybe" data-id="${esc(m.id)}">
-      <div class="item-main">
-        <div class="icon" aria-hidden="true">${ICONS[m.category] || '🔁'}</div>
-        <div class="info">
-          <div class="name">${esc(m.name)}</div>
-          <div class="meta">${esc(s.categories[m.category])} · ${esc(s.onlyOnce(formatDate(m.last)))}</div>
-        </div>
-        <div class="price"><div class="amount">${money(m.amount)}</div></div>
-      </div>
-      <div class="actions">
-        <button class="btn small danger" data-action="cancel-maybe">✂️ ${esc(s.cancel)}</button>
-        <button class="btn small ghost" data-action="hide">${esc(s.hide)}</button>
-      </div>
-    </article>`;
+    <div class="savebar ${saveYear ? 'show' : ''}" aria-live="polite">
+      ${saveYear ? `<span>${esc(s.savingsLead)} <strong>${money(saveYear)}</strong> ${esc(s.savingsTail(money(saveYear / 12)))}</span>` : ''}
+    </div>`;
 }
 
 function render() {
@@ -254,10 +298,11 @@ function render() {
   document.getElementById('lang').textContent = s.langSwitch;
   document.getElementById('footer-source').textContent = s.footerSource;
   document.getElementById('footer-offline').textContent = s.footerOffline;
+  document.getElementById('footer-disclaimer').textContent = s.privacy;
   app.innerHTML = state.result ? renderResults() : renderStart();
 }
 
-// ---------- Cancel dialog ----------
+// ---------- Cancel sheet ----------
 
 const dialog = document.getElementById('dialog');
 let dialogItem = null;
@@ -279,35 +324,41 @@ function renderDialog() {
   const query = encodeURIComponent(`${item.name} ${state.lang === 'de' ? 'kündigen' : 'cancel subscription'}`);
   const L = state.letter;
   dialog.innerHTML = `
-    <form method="dialog" class="dialog-inner" id="letter-form">
-      <header>
+    <form method="dialog" class="sheet">
+      <header class="sheet-head">
         <h2>${esc(s.cancelTitle(item.name))}</h2>
-        <button class="btn ghost small" value="close" aria-label="${esc(s.close)}">✕</button>
+        <button class="iconbtn" value="close" aria-label="${esc(s.close)}">${icon('close')}</button>
       </header>
-      <h3>${esc(s.cancelOnline)}</h3>
-      <p class="muted small">${esc(s.cancelOnlineHint)}</p>
-      <p class="row">
-        ${item.url ? `<a class="btn primary" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${esc(s.cancelPage)} ↗</a>` : ''}
-        <a class="btn" href="https://duckduckgo.com/?q=${query}" target="_blank" rel="noopener noreferrer">🔎 ${esc(s.cancelSearch)}</a>
-      </p>
-      <h3>${esc(s.letterTitle)}</h3>
-      <p class="muted small">${esc(s.letterHint)}</p>
-      <div class="grid">
-        <label>${esc(s.fName)}<input name="name" value="${esc(L.name)}" autocomplete="name"></label>
-        <label>${esc(s.fCustomerNo)}<input name="customerNo" value="${esc(L.customerNo)}"></label>
-        <label>${esc(s.fAddress)}<textarea name="address" rows="2" autocomplete="street-address">${esc(L.address)}</textarea></label>
-        <label>${esc(s.fProviderAddress)}<textarea name="providerAddress" rows="2">${esc(item.providerAddress)}</textarea></label>
-        <label>${esc(s.fEmail)}<input name="email" type="email" value="${esc(L.email)}" autocomplete="email"></label>
-        <label>${esc(s.fProvider)}<input name="provider" value="${esc(item.name)}"></label>
-      </div>
-      <label class="inline"><input type="checkbox" name="revokeMandate" ${L.revokeMandate ? 'checked' : ''}> ${esc(s.fRevoke)}</label>
-      <textarea id="letter" class="letter" rows="14" aria-label="${esc(s.letterTitle)}">${esc(letterText().body)}</textarea>
-      <p class="row">
-        <button type="button" class="btn primary" data-action="copy">📋 ${esc(s.copy)}</button>
-        <button type="button" class="btn" data-action="mail">✉️ ${esc(s.mail)}</button>
-        <button type="button" class="btn" data-action="print-letter">🖨️ ${esc(s.printLetter)}</button>
-      </p>
-      <p class="tip"><strong>${esc(s.tipTitle)}:</strong> ${esc(s.tip)}</p>
+
+      <section class="sheet-section">
+        <h3>${esc(s.cancelOnline)}</h3>
+        <p class="fine">${esc(s.cancelOnlineHint)}</p>
+        <div class="cta left">
+          ${item.url ? `<a class="pill primary" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${esc(s.cancelPage)} ${icon('external', 'xs')}</a>` : ''}
+          <a class="${item.url ? 'textlink' : 'pill primary'}" href="https://duckduckgo.com/?q=${query}" target="_blank" rel="noopener noreferrer">${esc(s.cancelSearch)} ${icon(item.url ? 'chevron' : 'external', 'xs')}</a>
+        </div>
+      </section>
+
+      <section class="sheet-section">
+        <h3>${esc(s.letterTitle)}</h3>
+        <p class="fine">${esc(s.letterHint)}</p>
+        <div class="fields">
+          <label>${esc(s.fName)}<input name="name" value="${esc(L.name)}" autocomplete="name"></label>
+          <label>${esc(s.fCustomerNo)}<input name="customerNo" value="${esc(L.customerNo)}"></label>
+          <label>${esc(s.fAddress)}<textarea name="address" rows="2" autocomplete="street-address">${esc(L.address)}</textarea></label>
+          <label>${esc(s.fProviderAddress)}<textarea name="providerAddress" rows="2">${esc(item.providerAddress)}</textarea></label>
+          <label>${esc(s.fEmail)}<input name="email" type="email" value="${esc(L.email)}" autocomplete="email"></label>
+          <label>${esc(s.fProvider)}<input name="provider" value="${esc(item.name)}"></label>
+        </div>
+        <label class="switch"><input type="checkbox" name="revokeMandate" ${L.revokeMandate ? 'checked' : ''}><span>${esc(s.fRevoke)}</span></label>
+        <textarea id="letter" class="letter" rows="13" aria-label="${esc(s.letterTitle)}">${esc(letterText().body)}</textarea>
+        <div class="cta left">
+          <button type="button" class="pill primary" data-action="copy">${esc(s.copy)}</button>
+          <button type="button" class="pill" data-action="mail">${esc(s.mail)}</button>
+          <button type="button" class="pill" data-action="print-letter">${esc(s.printLetter)}</button>
+        </div>
+        <p class="fine">${esc(s.tip)}</p>
+      </section>
     </form>`;
 }
 
@@ -322,6 +373,7 @@ dialog.addEventListener('input', (e) => {
 });
 
 dialog.addEventListener('click', async (e) => {
+  if (e.target === dialog) return dialog.close();
   const btn = e.target.closest('[data-action]');
   if (!btn) return;
   const text = document.getElementById('letter').value;
@@ -334,7 +386,7 @@ dialog.addEventListener('click', async (e) => {
       ta.select();
       document.execCommand('copy');
     }
-    btn.textContent = `✅ ${t().copied}`;
+    btn.textContent = t().copied;
   } else if (action === 'mail') {
     const { subject } = letterText();
     location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
@@ -365,7 +417,7 @@ function exportCsv() {
     .filter((i) => !state.hidden.has(i.id))
     .map((i) => [i.name, s.categories[i.category], s.cadence[i.cadence], num(i.amount), num(i.yearly), formatDate(i.last), formatDate(i.next), i.active ? (de ? 'ja' : 'yes') : (de ? 'nein' : 'no')]);
   const csv = [head, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(de ? ';' : ',')).join('\r\n');
-  const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }));
+  const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
   const a = document.createElement('a');
   a.href = url;
   a.download = de ? 'abos.csv' : 'subscriptions.csv';
@@ -382,10 +434,11 @@ app.addEventListener('click', (e) => {
     case 'demo': return loadDemo();
     case 'filter': state.filter = btn.dataset.value; break;
     case 'mark':
+      e.stopPropagation();
       if (btn.checked) state.marked.add(id);
       else state.marked.delete(id);
       break;
-    case 'hide': state.hidden.add(id); state.marked.delete(id); break;
+    case 'hide': state.hidden.add(id); state.marked.delete(id); state.open.delete(id); break;
     case 'unhide': state.hidden.delete(id); break;
     case 'toggle':
       if (state.open.has(id)) state.open.delete(id);
@@ -406,10 +459,18 @@ app.addEventListener('change', (e) => {
 });
 
 app.addEventListener('keydown', (e) => {
-  if (e.target.id === 'drop' && (e.key === 'Enter' || e.key === ' ')) {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  if (e.target.id === 'drop') {
     e.preventDefault();
     document.getElementById('file').click();
+  } else if (e.target.classList.contains('row-main') && e.target.dataset.action === 'toggle') {
+    e.preventDefault();
+    e.target.click();
   }
+});
+
+app.addEventListener('click', (e) => {
+  if (e.target.closest('#drop')) document.getElementById('file').click();
 });
 
 // Drop anywhere on the page, not just on the box.
