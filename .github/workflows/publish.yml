@@ -1,7 +1,12 @@
 name: Publish to npm
 
-# Runs when a GitHub release is published. Needs an NPM_TOKEN secret
-# (an npm "Automation" access token) in Settings > Secrets and variables > Actions.
+# Runs when a GitHub release is published. Uses npm Trusted Publishing:
+# npm verifies that the request comes from this workflow in this repository,
+# so no access token is stored anywhere. Configure it once on npmjs.com under
+# the package's Settings > Trusted Publisher (GitHub Actions, workflow publish.yml).
+#
+# Before creating a release, bump "version" in package.json; npm refuses to
+# publish the same version twice.
 on:
   release:
     types: [published]
@@ -19,7 +24,7 @@ jobs:
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
+      # Trusted publishing needs a recent npm CLI.
+      - run: npm install -g npm@latest
       - run: npm test
-      - run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish --access public
