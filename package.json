@@ -1,14 +1,44 @@
 {
   "name": "plugtheleak",
-  "version": "1.0.0",
-  "description": "Find every subscription in your bank statement and cancel it. 100% local, in your browser.",
-  "type": "module",
-  "private": true,
+  "version": "1.1.0",
+  "description": "Find every subscription in your bank statement and cancel it. 100% local: in your browser or your terminal.",
+  "keywords": [
+    "subscriptions",
+    "personal-finance",
+    "budget",
+    "bank-statement",
+    "csv",
+    "privacy",
+    "local-first",
+    "cli",
+    "recurring-payments",
+    "cancel"
+  ],
+  "homepage": "https://vqorn.github.io/PlugTheLeak/",
+  "bugs": {
+    "url": "https://github.com/vqorn/PlugTheLeak/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vqorn/PlugTheLeak.git"
+  },
   "license": "MIT",
+  "type": "module",
+  "bin": {
+    "plugtheleak": "bin/plugtheleak.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "node --test test/*.test.js",
     "build": "node scripts/build.mjs",
     "dev": "node scripts/serve.mjs"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=18"
+  }
 }

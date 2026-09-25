@@ -2,11 +2,13 @@ import { decodeBytes, parseCsv } from './csv.js';
 import { rowsToTransactions } from './columns.js';
 import { detectRecurring, summarize, findOverlaps } from './detect.js';
 import { buildIcs } from './calendar.js';
+import { drawCard } from './card.js';
 import { buildLetter } from './letter.js';
 import { sampleCsv } from './sample.js';
 import { STRINGS, pickLang } from './i18n.js';
 
 const REPO_URL = 'https://github.com/vqorn/PlugTheLeak';
+const SITE_URL = 'https://vqorn.github.io/PlugTheLeak/';
 
 // Line icons, drawn on a 24px grid with a 1.6px stroke.
 const ICON = {
@@ -22,6 +24,7 @@ const ICON = {
   layers: '<path d="m12 3.5 8.5 4.75L12 13 3.5 8.25z"/><path d="m3.5 12.5 8.5 4.75 8.5-4.75"/>',
   clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
   spark: '<path d="M12 3.5v3.5M12 17v3.5M3.5 12H7M17 12h3.5M6 6l2.4 2.4M15.6 15.6 18 18M6 18l2.4-2.4M15.6 8.4 18 6"/>',
+  share: '<path d="M12 15V3.5"/><path d="m7.5 8 4.5-4.5L16.5 8"/><path d="M6 11.5H5.5A2 2 0 0 0 3.5 13.5v5a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H18"/>',
   calendar: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
 };
 
@@ -65,6 +68,7 @@ const state = {
   loading: false,
   filter: 'subs',
   currency: defaultCurrency(),
+  warning: '',
   marked: new Set(),
   hidden: new Set(),
   open: new Set(),
@@ -114,13 +118,16 @@ async function handleFiles(fileList) {
   const all = [];
   let error = '';
   let currency = null;
+  const seen = new Set();
   for (const file of files) {
     const text = decodeBytes(await file.arrayBuffer());
     const { transactions, error: e, currency: c } = rowsToTransactions(parseCsv(text));
     if (e && !error) error = e;
+    if (c) seen.add(c);
     currency = currency || c;
     all.push(...transactions);
   }
+  state.warning = seen.size > 1 ? t().mixedCurrencies([...seen].join(', ')) : '';
   loadTransactions(all, error, currency);
 }
 
@@ -148,6 +155,7 @@ function loadTransactions(transactions, error, currency) {
 }
 
 function loadDemo() {
+  state.warning = '';
   const { transactions, error, currency } = rowsToTransactions(parseCsv(sampleCsv(Date.now(), state.lang)));
   loadTransactions(transactions, error, currency);
 }
@@ -325,9 +333,11 @@ function renderResults() {
       <p class="total-value">${money(headline, 0)}</p>
       <p class="total-sub">${esc(s.perYearLong)}</p>
       <p class="total-line">${esc(s.monthlyLine(money(headline / 12), headCount, subsView))}</p>
+      ${state.warning ? `<p class="notice">${esc(state.warning)}</p>` : ''}
       ${sum.priceIncreases ? `<p class="total-alert">${icon('trend', 'xs')} ${esc(s.priceAlerts(sum.priceIncreases))}</p>` : ''}
       <p class="fine">${esc(subsView ? s.summaryAll(money(sum.yearly)) : s.summarySubs(sum.subsCount, money(sum.subsYearly)))}</p>
       <p class="fine">${esc(s.summaryRange(formatDate(r.range.start), formatDate(r.range.end), r.count))}</p>
+      <div class="cta"><button class="pill primary" data-action="share">${icon('share', 'sm')} ${esc(s.shareCta)}</button></div>
       <label class="currency">${esc(s.currency)}
         <select id="currency">${CURRENCIES.map((c) => `<option value="${c}" ${c === state.currency ? 'selected' : ''}>${c}</option>`).join('')}</select>
       </label>
@@ -372,6 +382,82 @@ function render() {
   document.getElementById('footer-offline').textContent = s.footerOffline;
   document.getElementById('footer-disclaimer').textContent = s.privacy;
   app.innerHTML = state.result ? renderResults() : renderStart();
+}
+
+// ---------- Share card ----------
+
+let shareNames = false;
+
+function cardData() {
+  const s = t();
+  const r = state.result;
+  const visible = r.items.filter((i) => !state.hidden.has(i.id));
+  const active = visible.filter((i) => i.active && i.subscription);
+  const total = active.reduce((a, i) => a + i.yearly, 0);
+  const saving = active.filter((i) => state.marked.has(i.id)).reduce((a, i) => a + i.yearly, 0);
+  const chips = [];
+  for (const o of findOverlaps(active)) chips.push(s.cardOverlap(o.names.length, s.kinds[o.kind] || o.kind));
+  const trials = active.filter((i) => i.trial).length;
+  if (trials) chips.push(s.cardTrials(trials));
+  const prices = active.filter((i) => i.priceChange).length;
+  if (prices) chips.push(s.cardPrices(prices));
+  return {
+    total: money(total, 0),
+    totalText: money(total, 0),
+    eyebrow: s.cardEyebrow,
+    perYear: s.perYearLong,
+    monthlyLine: s.cardMonthly(money(total / 12), active.length),
+    saving: saving ? s.cardSaving(money(saving, 0)) : '',
+    chips,
+    items: active.map((i) => ({ name: i.name, category: i.category, yearly: money(i.yearly, 0) + s.perYearShort, marked: state.marked.has(i.id) })),
+    showNames: shareNames,
+    footer: s.cardFooter,
+    tagline: s.cardTagline,
+    url: SITE_URL.replace(/^https:\/\//, '').replace(/\/$/, ''),
+    tile: (cat) => TILE[cat] || TILE.other,
+  };
+}
+
+function renderShare() {
+  const s = t();
+  const canvas = drawCard(document.createElement('canvas'), cardData());
+  dialog.innerHTML = `
+    <form method="dialog" class="sheet">
+      <header class="sheet-head">
+        <h2>${esc(s.shareTitle)}</h2>
+        <button class="iconbtn" value="close" aria-label="${esc(s.close)}">${icon('close')}</button>
+      </header>
+      <p class="fine">${esc(s.shareHint)}</p>
+      <img class="card-preview" alt="" src="${canvas.toDataURL('image/png')}">
+      <label class="switch"><input type="checkbox" data-action="share-names" ${shareNames ? 'checked' : ''}><span>${esc(s.showNames)}</span></label>
+      <div class="cta left">
+        ${navigator.canShare ? `<button type="button" class="pill primary" data-action="share-send">${icon('share', 'sm')} ${esc(s.shareBtn)}</button>` : ''}
+        <button type="button" class="${navigator.canShare ? 'pill' : 'pill primary'}" data-action="share-save">${esc(s.downloadImage)}</button>
+      </div>
+    </form>`;
+  dialog.shareCanvas = canvas;
+}
+
+function openShare() {
+  renderShare();
+  if (typeof dialog.showModal === 'function') dialog.showModal();
+  else dialog.setAttribute('open', '');
+}
+
+async function shareImage(send) {
+  const canvas = dialog.shareCanvas;
+  const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+  const file = new File([blob], 'plugtheleak.png', { type: 'image/png' });
+  const total = cardData().totalText;
+  if (send && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], text: `${t().shareText(total)} ${SITE_URL}` });
+      return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+    }
+  }
+  download(blob, 'plugtheleak.png', 'image/png');
 }
 
 // ---------- Cancel sheet ----------
@@ -436,6 +522,10 @@ function renderDialog() {
 
 dialog.addEventListener('input', (e) => {
   const el = e.target;
+  if (el.dataset.action === 'share-names') {
+    shareNames = el.checked;
+    return renderShare();
+  }
   if (!el.name) return;
   if (el.name === 'providerAddress') dialogItem.providerAddress = el.value;
   else if (el.name === 'provider') dialogItem.name = el.value;
@@ -448,8 +538,10 @@ dialog.addEventListener('click', async (e) => {
   if (e.target === dialog) return dialog.close();
   const btn = e.target.closest('[data-action]');
   if (!btn) return;
-  const text = document.getElementById('letter').value;
   const action = btn.dataset.action;
+  if (action === 'share-send' || action === 'share-save') return shareImage(action === 'share-send');
+  if (action === 'share-names') return;
+  const text = document.getElementById('letter').value;
   if (action === 'copy') {
     try {
       await navigator.clipboard.writeText(text);
@@ -530,6 +622,7 @@ app.addEventListener('click', (e) => {
     case 'cancel':
     case 'cancel-maybe': return openCancel(findItem(id));
     case 'export': return exportCsv();
+    case 'share': return openShare();
     case 'remind': return downloadReminders([findItem(id)]);
     case 'remind-all':
       return downloadReminders(state.result.items.filter((i) => i.active && !state.hidden.has(i.id)
