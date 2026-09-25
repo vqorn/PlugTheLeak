@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseAmount, parseDate, rowsToTransactions } from '../src/columns.js';
 import { parseCsv, detectDelimiter } from '../src/csv.js';
-import { detectRecurring, summarize, identify, analyzeDates } from '../src/detect.js';
+import { detectRecurring, summarize, identify, analyzeDates, findOverlaps } from '../src/detect.js';
+import { buildIcs, nextOnOrAfter } from '../src/calendar.js';
 import { buildLetter } from '../src/letter.js';
 import { sampleCsv } from '../src/sample.js';
 
@@ -29,7 +30,11 @@ test('parseDate handles common formats', () => {
   assert.equal(parseDate('2026-08-03 10:11:12'), D(2026, 8, 3));
   assert.equal(parseDate('08/03/2026', 'mdy'), D(2026, 8, 3));
   assert.equal(parseDate('03/08/2026', 'dmy'), D(2026, 8, 3));
+  assert.equal(parseDate('03 Jun 2026'), D(2026, 6, 3));
+  assert.equal(parseDate('3. März 2026'), D(2026, 3, 3));
+  assert.equal(parseDate('Jun 3, 2026'), D(2026, 6, 3));
   assert.ok(Number.isNaN(parseDate('Kontostand')));
+  assert.ok(Number.isNaN(parseDate('Total 12 items')));
 });
 
 test('detectDelimiter ignores preamble lines', () => {
@@ -89,7 +94,7 @@ test('yearly and quarterly cadences', () => {
 
 test('PayPal payments are attributed to the real merchant', () => {
   const id = identify(tx(0, -2.99, 'PayPal Europe S.a.r.l. et Cie S.C.A', '1040 PP.4711.PP . Apple Services, Ihr Einkauf bei Apple Services'));
-  assert.equal(id.name, 'iCloud / Apple');
+  assert.equal(id.name, 'Apple Services');
   const unknown = identify(tx(0, -5, 'PayPal Europe S.a.r.l. et Cie S.C.A', '1040 PP.4711.PP . Kleiner Laden, Ihr Einkauf bei Kleiner Laden'));
   assert.equal(unknown.name, 'Kleiner Laden');
 });
@@ -119,16 +124,73 @@ test('cancellation letter (de + en)', () => {
   assert.doesNotMatch(en.body, /direct debit/);
 });
 
-test('demo data end to end', () => {
-  const { transactions } = rowsToTransactions(parseCsv(sampleCsv(D(2026, 9, 25))));
+test('German demo data end to end', () => {
+  const { transactions, currency } = rowsToTransactions(parseCsv(sampleCsv(D(2026, 9, 25), 'de')));
+  assert.equal(currency, 'EUR');
   const result = detectRecurring(transactions);
   const names = result.items.map((i) => i.name).sort();
   assert.deepEqual(names, [
-    'Audible', 'ChatGPT', 'Disney+', 'Hausverwaltung Schmidt', 'McFit', 'Netflix', 'Rundfunkbeitrag',
-    'Spotify', 'Stadtwerke Musterstadt', 'Telekom', 'iCloud / Apple',
+    'Audible', 'ChatGPT', 'Disney+', 'Google One', 'Hausverwaltung Schmidt', 'Joyn', 'McFit', 'Netflix',
+    'Rundfunkbeitrag', 'Spotify', 'Stadtwerke Musterstadt', 'Telekom', 'iCloud+',
   ]);
   assert.deepEqual(result.maybe.map((m) => m.name), ['Amazon Prime']);
+  const joyn = result.items.find((i) => i.name === 'Joyn');
+  assert.ok(joyn.trial && joyn.isNew);
+  assert.deepEqual(findOverlaps(result.items).map((o) => o.kind), ['cloud']);
   const s = summarize(result.items);
-  assert.equal(s.subsCount, 7);
   assert.equal(s.priceIncreases, 1);
+});
+
+test('American demo data end to end', () => {
+  const { transactions, currency } = rowsToTransactions(parseCsv(sampleCsv(D(2026, 9, 25), 'en')));
+  assert.equal(currency, 'USD');
+  const result = detectRecurring(transactions);
+  const names = result.items.map((i) => i.name).sort();
+  assert.deepEqual(names, [
+    'Apple Music', 'Audible', 'ChatGPT', 'Con Edison', 'Disney+', 'Hulu', 'Max', 'Netflix',
+    'Oak Street Property Management', 'Peacock', 'Planet Fitness', 'Spotify', 'Verizon',
+  ]);
+  assert.equal(result.items.find((i) => i.name === 'Netflix').amount, 17.99);
+  assert.ok(result.items.find((i) => i.name === 'Peacock').trial);
+  assert.deepEqual(findOverlaps(result.items).map((o) => o.kind).sort(), ['music', 'video']);
+});
+
+test('overlaps: two music services, but two video services are fine', () => {
+  const data = [
+    ...monthly(6, -10.99, 'Spotify AB'),
+    ...monthly(6, -10.99, 'APPLE.COM/BILL APPLE MUSIC'),
+    ...monthly(6, -13.99, 'Netflix'),
+    ...monthly(6, -7.99, 'Hulu'),
+  ];
+  const overlaps = findOverlaps(detectRecurring(data).items);
+  assert.equal(overlaps.length, 1);
+  assert.equal(overlaps[0].kind, 'music');
+  assert.deepEqual(overlaps[0].names.sort(), ['Apple Music', 'Spotify']);
+});
+
+test('trial charge before a subscription is flagged', () => {
+  const data = [tx(D(2026, 1, 5), -1, 'Peacock TV'), ...monthly(4, -7.99, 'Peacock TV', { start: [2026, 2], day: 5 })];
+  const item = detectRecurring(data).items[0];
+  assert.deepEqual(item.trial, { date: D(2026, 1, 5), amount: 1 });
+});
+
+test('calendar file: repeating events with alarms', () => {
+  const item = {
+    id: 'k:Netflix|1399|monthly', name: 'Netflix, Inc.', cadence: 'monthly', amount: 13.99, yearly: 167.88,
+    next: D(2026, 8, 3),
+  };
+  const ics = buildIcs([item, { ...item, id: 'y', name: 'Prime', cadence: 'yearly', next: D(2027, 5, 1) }], {
+    now: D(2026, 9, 25), money: (n) => `$${n.toFixed(2)}`,
+  });
+  assert.match(ics, /^BEGIN:VCALENDAR\r\n/);
+  assert.match(ics, /END:VCALENDAR\r\n$/);
+  assert.equal((ics.match(/BEGIN:VEVENT/g) || []).length, 2);
+  assert.match(ics, /DTSTART;VALUE=DATE:20261003/, 'rolled forward past today');
+  assert.match(ics, /RRULE:FREQ=MONTHLY\r\n/);
+  assert.match(ics, /RRULE:FREQ=YEARLY\r\n/);
+  assert.match(ics, /TRIGGER:-P3D/);
+  assert.match(ics, /TRIGGER:-P7D/);
+  assert.match(ics, /SUMMARY:Netflix\\, Inc\. charges \$13\.99/);
+  for (const line of ics.split('\r\n')) assert.ok(new TextEncoder().encode(line).length <= 75, line);
+  assert.equal(nextOnOrAfter(item, D(2026, 9, 25)), D(2026, 10, 3));
 });

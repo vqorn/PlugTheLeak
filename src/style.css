@@ -252,6 +252,22 @@ h1 {
 .row-actions { display: flex; align-items: center; gap: 22px; margin-top: 16px; }
 .row-actions .textlink { font-size: 15px; }
 
+.insight { display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px; }
+.insight + .insight { border-top: 1px solid var(--hair); }
+.insight-ic { display: grid; place-items: center; width: 36px; height: 36px; flex: none; border-radius: 10px; background: color-mix(in srgb, var(--orange) 12%, transparent); color: var(--orange); }
+.insight-ic .ic { width: 20px; height: 20px; stroke-width: 1.8; }
+.insight-text { display: flex; flex-direction: column; padding-top: 7px; font-size: 15px; line-height: 1.4; }
+.insight-sub { color: var(--text-2); font-size: 14px; margin-top: 2px; }
+
+.currency { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 14px; color: var(--text-2); }
+.currency select {
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  padding: 5px 28px 5px 12px; border-radius: 980px; border: 0;
+  background: var(--fill) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6' fill='none' stroke='%2386868b' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center / 12px;
+  color: var(--text); font: 500 14px var(--font);
+}
+.list .currency select, .total .currency select { background-color: color-mix(in srgb, var(--text) 7%, transparent); }
+
 .links { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 30px; margin: 56px 0 10px; }
 .links .textlink { font-size: 15px; }
 
@@ -336,7 +352,7 @@ input:not([type=checkbox]):focus, textarea:focus { outline: none; border-color: 
 /* ---------- Print ---------- */
 
 @media print {
-  .nav, .seg, .links, .savebar, .foot, .check, .check-space, .row-chev, .row-actions, .row-inline-actions, dialog { display: none !important; }
+  .nav, .seg, .links, .savebar, .foot, .currency, .check, .check-space, .row-chev, .row-actions, .row-inline-actions, dialog { display: none !important; }
   body { background: #fff; color: #000; }
   .list { box-shadow: none; border: 1px solid #ddd; }
   .row { break-inside: avoid; }
