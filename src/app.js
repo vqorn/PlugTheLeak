@@ -5,7 +5,7 @@ import { buildLetter } from './letter.js';
 import { sampleCsv } from './sample.js';
 import { STRINGS, pickLang } from './i18n.js';
 
-const REPO_URL = 'https://github.com/vqorn/Trend';
+const REPO_URL = 'https://github.com/vqorn/geldleck';
 
 const ICONS = {
   video: '🎬', music: '🎵', audio: '🎧', software: '💻', cloud: '☁️', ai: '🤖', news: '📰',
@@ -425,7 +425,7 @@ window.addEventListener('drop', (e) => {
 document.getElementById('lang').addEventListener('click', () => {
   state.lang = state.lang === 'de' ? 'en' : 'de';
   try {
-    localStorage.setItem('abo-killer-lang', state.lang);
+    localStorage.setItem('geldleck-lang', state.lang);
   } catch {
     // storage blocked: language just won't be remembered
   }

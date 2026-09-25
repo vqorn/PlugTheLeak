@@ -186,7 +186,7 @@ export const STRINGS = {
 
 export function pickLang() {
   try {
-    const saved = localStorage.getItem('abo-killer-lang');
+    const saved = localStorage.getItem('geldleck-lang');
     if (saved === 'de' || saved === 'en') return saved;
   } catch {
     // storage blocked: fall through to the browser language

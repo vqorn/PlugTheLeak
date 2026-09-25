@@ -1,15 +1,17 @@
 <div align="center">
 
-# ✂️ Abo-Killer
+# 💧 Geldleck
 
-**Kontoauszug rein, alle Abos raus. Und direkt kündigen.**
+**Finde die Lecks in deinem Konto.**
+
+Kontoauszug rein, alle Abos raus. Und direkt kündigen.
 
 Findet jedes Abo und jeden Vertrag in deinem Kontoauszug, zeigt dir, was dich das im Jahr kostet, entdeckt heimliche Preiserhöhungen und schreibt dir die Kündigung.
 Kostenlos, ohne Anmeldung, und deine Bankdaten verlassen nie deinen Browser.
 
-**[➜ Jetzt ausprobieren](https://vqorn.github.io/Trend/)** · [English](#english)
+**[➜ Jetzt ausprobieren](https://vqorn.github.io/geldleck/)** · [English](#english)
 
-<img src="docs/results.png" alt="Abo-Killer zeigt 7 Abos für 1.454 € im Jahr" width="620">
+<img src="docs/results.png" alt="Geldleck zeigt 7 Abos für 1.454 € im Jahr" width="620">
 
 </div>
 
@@ -17,7 +19,7 @@ Kostenlos, ohne Anmeldung, und deine Bankdaten verlassen nie deinen Browser.
 
 Die meisten Leute zahlen für Abos, die sie vergessen haben: die Testversion, die still weiterläuft, das Fitnessstudio aus dem Januar, der Streamingdienst für eine einzige Serie. Apps wie Finanzguru finden das auch, wollen dafür aber Zugriff auf dein Bankkonto und in der Premium-Version Geld.
 
-Abo-Killer braucht nur die CSV-Datei, die dir jedes Online-Banking gibt. Alles wird auf deinem eigenen Gerät ausgewertet.
+Geldleck braucht nur die CSV-Datei, die dir jedes Online-Banking gibt. Alles wird auf deinem eigenen Gerät ausgewertet.
 
 ## Was es kann
 
@@ -37,12 +39,12 @@ Getestet mit den CSV-Exporten von:
 
 **Sparkasse** · **DKB** · **ING** · **N26** · **Comdirect** · **Commerzbank** · **Deutsche Bank** · **Postbank** · **Volksbank / Raiffeisenbank** · **Revolut** · **PayPal**
 
-Andere Banken klappen meistens auch, weil die Spalten automatisch erkannt werden. Wenn deine Bank nicht geht: [Issue aufmachen](https://github.com/vqorn/Trend/issues) mit den Spaltenüberschriften (bitte **keine** echten Buchungen posten).
+Andere Banken klappen meistens auch, weil die Spalten automatisch erkannt werden. Wenn deine Bank nicht geht: [Issue aufmachen](https://github.com/vqorn/geldleck/issues) mit den Spaltenüberschriften (bitte **keine** echten Buchungen posten).
 
 ## So geht's
 
 1. Im Online-Banking die Umsätze als **CSV** exportieren, am besten **12 Monate**.
-2. Datei auf [vqorn.github.io/Trend](https://vqorn.github.io/Trend/) ziehen.
+2. Datei auf [vqorn.github.io/geldleck](https://vqorn.github.io/geldleck/) ziehen.
 3. Liste durchgehen, abhaken, kündigen. Fertig.
 
 Keine Datei zur Hand? Auf der Seite gibt es einen Knopf **„Mit Beispieldaten ausprobieren“**.
@@ -52,7 +54,7 @@ Keine Datei zur Hand? Auf der Seite gibt es einen Knopf **„Mit Beispieldaten a
 - Es gibt **keinen Server**. Die Seite ist eine statische HTML-Datei.
 - Die Seite hat eine Content-Security-Policy mit `connect-src 'none'`. Das heißt: Der Browser **verbietet** der Seite technisch, irgendetwas zu senden. Selbst wenn sie wollte, könnte sie es nicht.
 - Kein Tracking, keine Cookies, keine Analytics, keine externen Schriftarten oder Skripte.
-- Du willst es ganz sicher? Lade `index.html` aus dem [neuesten Build](https://vqorn.github.io/Trend/) herunter (Rechtsklick, „Seite speichern unter“), schalte das WLAN aus und öffne die Datei. Funktioniert komplett offline.
+- Du willst es ganz sicher? Lade `index.html` aus dem [neuesten Build](https://vqorn.github.io/geldleck/) herunter (Rechtsklick, „Seite speichern unter“), schalte das WLAN aus und öffne die Datei. Funktioniert komplett offline.
 
 ## Grenzen (ehrlich gesagt)
 
@@ -93,13 +95,13 @@ src/app.js        Oberfläche
 
 ## English
 
-**Drop in your bank statement, get every subscription out. Then cancel it.**
+**Find the leaks in your bank account.** Drop in your bank statement, get every subscription out, then cancel it.
 
-Abo-Killer finds recurring payments in a bank CSV export, shows what they cost per year, spots price increases and writes the cancellation letter for you. It runs 100% in your browser: no server, no account, and a `connect-src 'none'` CSP that makes it technically impossible for the page to send your data anywhere. Works offline as a single HTML file.
+Geldleck finds recurring payments in a bank CSV export, shows what they cost per year, spots price increases and writes the cancellation letter for you. It runs 100% in your browser: no server, no account, and a `connect-src 'none'` CSP that makes it technically impossible for the page to send your data anywhere. Works offline as a single HTML file.
 
 Built for German banks first (Sparkasse, DKB, ING, N26, Comdirect, Commerzbank, Deutsche Bank, Postbank, Volksbank), plus Revolut and PayPal. Columns are auto-detected, so many other banks work too. The UI is available in German and English.
 
-**[➜ Try it](https://vqorn.github.io/Trend/)**
+**[➜ Try it](https://vqorn.github.io/geldleck/)**
 
 ## Lizenz
 
