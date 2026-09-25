@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- connect-src 'none': this page cannot send your data anywhere, even if it wanted to. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>PlugTheLeak: find and cancel your subscriptions</title>
+  <meta name="description" content="Drop in your bank statement, get every subscription out and cancel it. Finds recurring payments in your bank CSV. 100% local in your browser, free and open source.">
+  <meta name="theme-color" content="#e5484d">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>">
+  <link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+  <header class="top">
+    <a class="logo" href="./">💧 <span>PlugTheLeak</span></a>
+    <nav>
+      <button class="btn ghost small" id="lang" type="button">EN</button>
+      <a class="btn ghost small" id="repo" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+    </nav>
+  </header>
+  <main id="app"></main>
+  <footer class="foot">
+    <a id="footer-source" target="_blank" rel="noopener noreferrer"></a>
+    <span id="footer-offline"></span>
+  </footer>
+  <dialog id="dialog"></dialog>
+  <pre id="print-letter"></pre>
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
