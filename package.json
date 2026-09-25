@@ -1,0 +1,14 @@
+{
+  "name": "abo-killer",
+  "version": "1.0.0",
+  "description": "Find every subscription in your bank statement and cancel it. 100% local, in your browser.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/serve.mjs"
+  },
+  "engines": { "node": ">=20" }
+}
