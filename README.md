@@ -7,7 +7,7 @@
 Drop in your bank statement, get every subscription out, and cancel what you don't need.
 Free, no sign-up, and your bank data never leaves your browser.
 
-**[➜ Try it now](https://vqorn.github.io/plugtheleak/)** · [Deutsch](#deutsch)
+**[➜ Try it now](https://vqorn.github.io/PlugTheLeak/)** · [Deutsch](#deutsch)
 
 <img src="docs/results.png" alt="PlugTheLeak finds 7 subscriptions costing €1,454 a year" width="620">
 
@@ -37,12 +37,12 @@ Tested with CSV exports from:
 
 **Sparkasse** · **DKB** · **ING** · **N26** · **Comdirect** · **Commerzbank** · **Deutsche Bank** · **Postbank** · **Volksbank / Raiffeisenbank** · **Revolut** · **PayPal**
 
-Columns are detected automatically, so many other banks work too. German banks are the best covered so far. If yours doesn't work, [open an issue](https://github.com/vqorn/plugtheleak/issues) with the column headers of your export (please **don't** post real transactions).
+Columns are detected automatically, so many other banks work too. German banks are the best covered so far. If yours doesn't work, [open an issue](https://github.com/vqorn/PlugTheLeak/issues) with the column headers of your export (please **don't** post real transactions).
 
 ## How it works
 
 1. Export your transactions from online banking as **CSV**, ideally for **12 months**.
-2. Drop the file onto [vqorn.github.io/plugtheleak](https://vqorn.github.io/plugtheleak/).
+2. Drop the file onto [vqorn.github.io/PlugTheLeak](https://vqorn.github.io/PlugTheLeak/).
 3. Go through the list, tick, cancel. Done.
 
 No file at hand? Click **"Try it with sample data"** on the page.
@@ -52,7 +52,7 @@ No file at hand? Click **"Try it with sample data"** on the page.
 - There is **no server**. The page is a single static HTML file.
 - The page ships a Content Security Policy with `connect-src 'none'`. Your browser **forbids** the page from sending anything anywhere. Even if it wanted to, it couldn't.
 - No tracking, no cookies, no analytics, no external fonts or scripts.
-- Want to be sure? Save the [page](https://vqorn.github.io/plugtheleak/) (right click, "Save as"), turn off your Wi-Fi and open the file. It works completely offline.
+- Want to be sure? Save the [page](https://vqorn.github.io/PlugTheLeak/) (right click, "Save as"), turn off your Wi-Fi and open the file. It works completely offline.
 
 ## Limitations (honestly)
 
@@ -95,7 +95,7 @@ src/app.js        user interface
 
 **Finde die Lecks in deinem Konto.** Kontoauszug als CSV reinziehen, alle Abos und Verträge sehen, heimliche Preiserhöhungen entdecken und mit einem Klick das Kündigungsschreiben erstellen. Läuft zu 100 % im Browser, ohne Anmeldung, ohne Server. Unterstützt Sparkasse, DKB, ING, N26, Comdirect, Commerzbank, Deutsche Bank, Postbank, Volksbank, Revolut und PayPal. Die App erkennt einen deutschen Browser und startet dann automatisch auf Deutsch.
 
-**[➜ Jetzt ausprobieren](https://vqorn.github.io/plugtheleak/)**
+**[➜ Jetzt ausprobieren](https://vqorn.github.io/PlugTheLeak/)**
 
 ## License
 

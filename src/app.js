@@ -5,7 +5,7 @@ import { buildLetter } from './letter.js';
 import { sampleCsv } from './sample.js';
 import { STRINGS, pickLang } from './i18n.js';
 
-const REPO_URL = 'https://github.com/vqorn/plugtheleak';
+const REPO_URL = 'https://github.com/vqorn/PlugTheLeak';
 
 const ICONS = {
   video: '🎬', music: '🎵', audio: '🎧', software: '💻', cloud: '☁️', ai: '🤖', news: '📰',
