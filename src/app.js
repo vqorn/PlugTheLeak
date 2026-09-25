@@ -1,6 +1,7 @@
 import { decodeBytes, parseCsv } from './csv.js';
 import { rowsToTransactions } from './columns.js';
-import { detectRecurring, summarize } from './detect.js';
+import { detectRecurring, summarize, findOverlaps } from './detect.js';
+import { buildIcs } from './calendar.js';
 import { buildLetter } from './letter.js';
 import { sampleCsv } from './sample.js';
 import { STRINGS, pickLang } from './i18n.js';
@@ -18,7 +19,28 @@ const ICON = {
   close: '<path d="M6 6l12 12M18 6 6 18"/>',
   external: '<path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/>',
   trend: '<path d="m4 16 5-5 4 4 7-7"/><path d="M15 8h5v5"/>',
+  layers: '<path d="m12 3.5 8.5 4.75L12 13 3.5 8.25z"/><path d="m3.5 12.5 8.5 4.75 8.5-4.75"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  spark: '<path d="M12 3.5v3.5M12 17v3.5M3.5 12H7M17 12h3.5M6 6l2.4 2.4M15.6 15.6 18 18M6 18l2.4-2.4M15.6 8.4 18 6"/>',
+  calendar: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
 };
+
+const CURRENCIES = ['EUR', 'USD', 'GBP', 'CHF', 'CAD', 'AUD', 'NZD', 'SEK', 'NOK', 'DKK', 'PLN', 'CZK', 'HUF', 'JPY', 'INR', 'BRL', 'MXN', 'ZAR', 'SGD', 'HKD'];
+
+const REGION_CURRENCY = {
+  US: 'USD', GB: 'GBP', UK: 'GBP', CA: 'CAD', AU: 'AUD', NZ: 'NZD', CH: 'CHF', LI: 'CHF', SE: 'SEK', NO: 'NOK',
+  DK: 'DKK', PL: 'PLN', CZ: 'CZK', HU: 'HUF', JP: 'JPY', IN: 'INR', BR: 'BRL', MX: 'MXN', ZA: 'ZAR', SG: 'SGD', HK: 'HKD',
+};
+
+// When the file doesn't say, the browser's region is the best guess.
+function defaultCurrency() {
+  for (const tag of navigator.languages || [navigator.language || '']) {
+    const region = (tag.split('-')[1] || '').toUpperCase();
+    if (REGION_CURRENCY[region]) return REGION_CURRENCY[region];
+    if (region) return 'EUR';
+  }
+  return (navigator.language || '').startsWith('de') ? 'EUR' : 'USD';
+}
 
 function icon(name, cls = '') {
   return `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICON[name]}</svg>`;
@@ -42,6 +64,7 @@ const state = {
   error: '',
   loading: false,
   filter: 'subs',
+  currency: defaultCurrency(),
   marked: new Set(),
   hidden: new Set(),
   open: new Set(),
@@ -55,14 +78,22 @@ function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 }
 
+function locale() {
+  if (state.lang === 'de') return 'de-DE';
+  const nav = navigator.language || '';
+  return nav.startsWith('en') ? nav : 'en-US';
+}
+
 function money(n, digits = 2) {
-  return new Intl.NumberFormat(state.lang === 'de' ? 'de-DE' : 'en-IE', {
-    style: 'currency', currency: 'EUR', minimumFractionDigits: digits, maximumFractionDigits: digits,
+  const cur = state.currency;
+  const d = cur === 'JPY' || cur === 'HUF' ? 0 : digits;
+  return new Intl.NumberFormat(locale(), {
+    style: 'currency', currency: cur, minimumFractionDigits: d, maximumFractionDigits: d,
   }).format(n);
 }
 
 function formatDate(ms) {
-  return new Date(ms).toLocaleDateString(state.lang === 'de' ? 'de-DE' : 'en-GB', {
+  return new Date(ms).toLocaleDateString(locale(), {
     day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
   });
 }
@@ -82,17 +113,20 @@ async function handleFiles(fileList) {
   render();
   const all = [];
   let error = '';
+  let currency = null;
   for (const file of files) {
     const text = decodeBytes(await file.arrayBuffer());
-    const { transactions, error: e } = rowsToTransactions(parseCsv(text));
+    const { transactions, error: e, currency: c } = rowsToTransactions(parseCsv(text));
     if (e && !error) error = e;
+    currency = currency || c;
     all.push(...transactions);
   }
-  loadTransactions(all, error);
+  loadTransactions(all, error, currency);
 }
 
-function loadTransactions(transactions, error) {
+function loadTransactions(transactions, error, currency) {
   state.loading = false;
+  state.currency = currency || defaultCurrency();
   state.marked.clear();
   state.hidden.clear();
   state.open.clear();
@@ -114,8 +148,8 @@ function loadTransactions(transactions, error) {
 }
 
 function loadDemo() {
-  const { transactions, error } = rowsToTransactions(parseCsv(sampleCsv()));
-  loadTransactions(transactions, error);
+  const { transactions, error, currency } = rowsToTransactions(parseCsv(sampleCsv(Date.now(), state.lang)));
+  loadTransactions(transactions, error, currency);
 }
 
 // ---------- Start page ----------
@@ -161,6 +195,34 @@ function renderStart() {
 
 // ---------- Results ----------
 
+let overlapIds = new Set();
+
+function renderInsights(visible) {
+  const s = t();
+  const active = visible.filter((i) => i.active);
+  const overlaps = findOverlaps(active);
+  overlapIds = new Set(overlaps.flatMap((o) => o.ids));
+  const rows = [];
+  const row = (ic, text, sub = '') => `
+    <li class="insight">
+      <span class="insight-ic">${icon(ic)}</span>
+      <div class="insight-text"><span>${esc(text)}</span>${sub ? `<span class="insight-sub">${esc(sub)}</span>` : ''}</div>
+    </li>`;
+  for (const o of overlaps) {
+    rows.push(row('layers', s.overlap(o.names.length, s.kinds[o.kind] || o.kind, o.names.join(', ')), s.overlapCost(money(o.yearly))));
+  }
+  for (const i of active.filter((x) => x.trial)) {
+    rows.push(row('spark', s.trialLine(i.name, money(i.trial.amount), money(i.amount), s.cadence[i.cadence])));
+  }
+  for (const i of active.filter((x) => x.isNew && !x.trial)) {
+    rows.push(row('clock', s.newLine(i.name, formatDate(i.first))));
+  }
+  for (const i of active.filter((x) => x.priceChange)) {
+    rows.push(row('trend', s.priceLine(i.name, money(i.priceChange.from), money(i.priceChange.to))));
+  }
+  return rows.length ? group(s.insightsTitle, rows.join(''), s.insightsHint) : '';
+}
+
 function renderRow(item, { ended = false, hidden = false } = {}) {
   const s = t();
   const marked = state.marked.has(item.id);
@@ -168,6 +230,9 @@ function renderRow(item, { ended = false, hidden = false } = {}) {
   const cancellable = !ended && !hidden && !NOT_CANCELLABLE.has(item.category);
   const tags = [];
   if (item.priceChange) tags.push(`<span class="tag warn">${icon('trend', 'xs')} ${esc(s.priceUp(money(item.priceChange.from), money(item.priceChange.to)))}</span>`);
+  if (item.trial) tags.push(`<span class="tag warn">${esc(s.trialTag)}</span>`);
+  if (item.isNew) tags.push(`<span class="tag">${esc(s.newTag)}</span>`);
+  if (overlapIds.has(item.id)) tags.push(`<span class="tag warn">${esc(s.overlapTag)}: ${esc(s.kinds[item.kind] || '')}</span>`);
   if (item.variable) tags.push(`<span class="tag">${esc(s.variable)}</span>`);
   if (item.directDebit) tags.push(`<span class="tag">${esc(s.directDebit)}</span>`);
 
@@ -198,6 +263,7 @@ function renderRow(item, { ended = false, hidden = false } = {}) {
           </ul>
           <div class="row-actions">
             ${cancellable ? `<button class="pill primary small" data-action="cancel">${esc(s.cancel)}</button>` : ''}
+            ${!ended && !hidden ? `<button class="textlink" data-action="remind">${esc(s.remind)}</button>` : ''}
             <button class="textlink" data-action="${hidden ? 'unhide' : 'hide'}">${esc(hidden ? s.restore : s.hide)}</button>
           </div>
         </div>` : ''}
@@ -262,8 +328,12 @@ function renderResults() {
       ${sum.priceIncreases ? `<p class="total-alert">${icon('trend', 'xs')} ${esc(s.priceAlerts(sum.priceIncreases))}</p>` : ''}
       <p class="fine">${esc(subsView ? s.summaryAll(money(sum.yearly)) : s.summarySubs(sum.subsCount, money(sum.subsYearly)))}</p>
       <p class="fine">${esc(s.summaryRange(formatDate(r.range.start), formatDate(r.range.end), r.count))}</p>
+      <label class="currency">${esc(s.currency)}
+        <select id="currency">${CURRENCIES.map((c) => `<option value="${c}" ${c === state.currency ? 'selected' : ''}>${c}</option>`).join('')}</select>
+      </label>
     </section>
 
+    ${renderInsights(filtered)}
     ${group(s.sectionActive, active.map((i) => renderRow(i)).join(''), s.savingsHint)}
     ${maybe.length ? group(s.sectionMaybe, maybe.map(renderMaybe).join(''), s.sectionMaybeHint) : ''}
 
@@ -281,10 +351,12 @@ function renderResults() {
       </details>` : ''}
 
     <nav class="links">
+      <button class="textlink" data-action="remind-all">${esc(s.remindAll)}</button>
       <button class="textlink" data-action="export">${esc(s.exportCsv)}</button>
       <button class="textlink" data-action="print">${esc(s.print)}</button>
       <button class="textlink" data-action="reset">${esc(s.startOver)}</button>
     </nav>
+    <p class="fine center">${esc(s.remindHint)}</p>
     <p class="fine center">${esc(s.disclaimer)}</p>
 
     <div class="savebar ${saveYear ? 'show' : ''}" aria-live="polite">
@@ -417,12 +489,23 @@ function exportCsv() {
     .filter((i) => !state.hidden.has(i.id))
     .map((i) => [i.name, s.categories[i.category], s.cadence[i.cadence], num(i.amount), num(i.yearly), formatDate(i.last), formatDate(i.next), i.active ? (de ? 'ja' : 'yes') : (de ? 'nein' : 'no')]);
   const csv = [head, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(de ? ';' : ',')).join('\r\n');
-  const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
+  download('\uFEFF' + csv, de ? 'abos.csv' : 'subscriptions.csv', 'text/csv;charset=utf-8');
+}
+
+function download(content, filename, type) {
+  const url = URL.createObjectURL(new Blob([content], { type }));
   const a = document.createElement('a');
   a.href = url;
-  a.download = de ? 'abos.csv' : 'subscriptions.csv';
+  a.download = filename;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadReminders(items) {
+  if (!items.length) return;
+  const ics = buildIcs(items, { lang: state.lang, money: (n) => money(n) });
+  const name = items.length === 1 ? items[0].name.replace(/[^\w-]+/g, '-').toLowerCase() : 'subscriptions';
+  download(ics, `${name}.ics`, 'text/calendar;charset=utf-8');
 }
 
 app.addEventListener('click', (e) => {
@@ -447,6 +530,10 @@ app.addEventListener('click', (e) => {
     case 'cancel':
     case 'cancel-maybe': return openCancel(findItem(id));
     case 'export': return exportCsv();
+    case 'remind': return downloadReminders([findItem(id)]);
+    case 'remind-all':
+      return downloadReminders(state.result.items.filter((i) => i.active && !state.hidden.has(i.id)
+        && (state.filter === 'all' || i.subscription) && !NOT_CANCELLABLE.has(i.category)));
     case 'print': return window.print();
     case 'reset': state.result = null; state.error = ''; break;
     default: return;
@@ -456,6 +543,10 @@ app.addEventListener('click', (e) => {
 
 app.addEventListener('change', (e) => {
   if (e.target.id === 'file') handleFiles(e.target.files);
+  if (e.target.id === 'currency') {
+    state.currency = e.target.value;
+    render();
+  }
 });
 
 app.addEventListener('keydown', (e) => {

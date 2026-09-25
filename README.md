@@ -9,7 +9,7 @@ Free, no sign-up, and your bank data never leaves your browser.
 
 **[➜ Try it now](https://vqorn.github.io/PlugTheLeak/)** · [Deutsch](#deutsch)
 
-<img src="docs/results.png" alt="PlugTheLeak finds 7 subscriptions costing €1,454 a year" width="620">
+<img src="docs/results.png" alt="PlugTheLeak showing a year of subscriptions, overlaps and price increases" width="620">
 
 </div>
 
@@ -23,21 +23,31 @@ PlugTheLeak only needs the CSV file every online bank lets you download. Everyth
 
 - 🔍 **Finds recurring payments** automatically: weekly, monthly, quarterly, every six months, yearly
 - 💶 **Shows the real cost** per month and per year, with subscriptions kept apart from fixed costs like rent or insurance
-- 📈 **Spots price increases**, e.g. "Netflix: €12.99 → €13.99"
+- 📈 **Spots price increases**, e.g. "Netflix: $15.49 → $17.99"
+- 🧩 **Finds overlaps**: "You pay for 2 music streaming services: Spotify, Apple Music"
+- 🧪 **Catches trials that turned paid**, and flags subscriptions that only just started
+- 📅 **Calendar reminders** before the next charge (one .ics file for iPhone, Google and Outlook)
 - 💸 **Savings calculator**: tick what you don't need and instantly see how much you save per year
 - ✉️ **Cancellation letter** in one click, including revoking the direct debit, ready to copy, e-mail or print
 - 🔗 **Direct links to the cancel page** of well-known providers
 - 🧾 **PayPal payments** are traced back to the real merchant ("Your purchase at Spotify")
-- 🏦 **110+ known providers** (streaming, mobile, gyms, software, AI, news, insurance …)
+- 🏦 **190+ known providers** across the US, UK and Europe (streaming, mobile, gyms, software, AI, news, insurance …)
+- 💱 **Any currency**: detected from your file, switchable to 20 currencies
 - 🌙 Dark mode, works on phones, English and German
 
 ## Supported banks
 
 Tested with CSV exports from:
 
-**Sparkasse** · **DKB** · **ING** · **N26** · **Comdirect** · **Commerzbank** · **Deutsche Bank** · **Postbank** · **Volksbank / Raiffeisenbank** · **Revolut** · **PayPal**
+🇺🇸 **Chase** · **Bank of America** · **Wells Fargo** · **Capital One** · **Citi** · **American Express** · **Discover**
 
-Columns are detected automatically, so many other banks work too. German banks are the best covered so far. If yours doesn't work, [open an issue](https://github.com/vqorn/PlugTheLeak/issues) with the column headers of your export (please **don't** post real transactions).
+🇬🇧 **Monzo** · **Starling** · **Barclays** · **HSBC** · **Lloyds** · **Nationwide**
+
+🇩🇪 **Sparkasse** · **DKB** · **ING** · **N26** · **Comdirect** · **Commerzbank** · **Deutsche Bank** · **Postbank** · **Volksbank**
+
+🌍 **Revolut** · **PayPal**
+
+Columns, date formats, number formats and currency are detected automatically, including files without a header row and credit card exports that list charges as positive numbers. So many other banks work too. If yours doesn't work, [open an issue](https://github.com/vqorn/PlugTheLeak/issues) with the column headers of your export (please **don't** post real transactions).
 
 ## How it works
 
@@ -86,6 +96,7 @@ src/columns.js    detecting bank formats, parsing amounts and dates
 src/merchants.js  known providers and categories
 src/detect.js     recurring payment detection
 src/letter.js     cancellation letters
+src/calendar.js   calendar reminders (.ics)
 src/app.js        user interface
 ```
 
@@ -93,7 +104,7 @@ src/app.js        user interface
 
 ## Deutsch
 
-**Finde die Lecks in deinem Konto.** Kontoauszug als CSV reinziehen, alle Abos und Verträge sehen, heimliche Preiserhöhungen entdecken und mit einem Klick das Kündigungsschreiben erstellen. Läuft zu 100 % im Browser, ohne Anmeldung, ohne Server. Unterstützt Sparkasse, DKB, ING, N26, Comdirect, Commerzbank, Deutsche Bank, Postbank, Volksbank, Revolut und PayPal. Die App erkennt einen deutschen Browser und startet dann automatisch auf Deutsch.
+**Finde die Lecks in deinem Konto.** Kontoauszug als CSV reinziehen, alle Abos und Verträge sehen, heimliche Preiserhöhungen entdecken und mit einem Klick das Kündigungsschreiben erstellen. Läuft zu 100 % im Browser, ohne Anmeldung, ohne Server. Erkennt doppelte Abos, Testphasen, die zum Abo wurden, und schickt Erinnerungen in deinen Kalender. Unterstützt Sparkasse, DKB, ING, N26, Comdirect, Commerzbank, Deutsche Bank, Postbank, Volksbank, Revolut, PayPal und viele Banken aus den USA und Großbritannien. Die App erkennt einen deutschen Browser und startet dann automatisch auf Deutsch.
 
 **[➜ Jetzt ausprobieren](https://vqorn.github.io/PlugTheLeak/)**
 

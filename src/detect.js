@@ -13,6 +13,16 @@ export const CADENCES = [
   { id: 'yearly', days: 365.25, tol: 25, perYear: 1, min: 2 },
 ];
 
+const MONTHS = { monthly: 1, bimonthly: 2, quarterly: 3, halfyearly: 6, yearly: 12 };
+
+// One period after `ms`, in calendar months where that is what the cadence means.
+export function addCadence(ms, cadenceId) {
+  const months = MONTHS[cadenceId];
+  if (!months) return ms + (cadenceId === 'biweekly' ? 14 : 7) * DAY;
+  const d = new Date(ms);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + months, d.getUTCDate());
+}
+
 const LEGAL_FORMS =
   /\b(gmbh|mbh|ag|se|kg|kgaa|co|ohg|ug|ev|e\.v|ltd|limited|inc|llc|sarl|s\.a\.r\.l|sca|s\.c\.a|et cie|bv|b\.v|nv|ab|sa|s\.a|plc|europe|deutschland|germany|holding|services|payments|international|online|de|com)\b/g;
 
@@ -41,7 +51,7 @@ export function prettyName(s) {
   return out.length > 42 ? out.slice(0, 40).trim() + '…' : out;
 }
 
-const PURCHASE_AT = /(?:Ihr Einkauf bei|Your purchase at|purchase from|Zahlung an)\s+([^,;]+)/i;
+const PURCHASE_AT = /(?:Ihr Einkauf bei|Your purchase at|purchase from|Zahlung an|payment to)\s+(.+?)(?=\s+(?:rent|for|memo|conf|ref)\b|[,;]|$)/i;
 
 // Decide who was actually paid, and a key to group payments to the same party.
 export function identify(tx) {
@@ -163,7 +173,7 @@ function buildItem(group, txs, analysis, end, variable) {
     const [l2, l1] = amounts.slice(-2);
     if (eq(f1, f2) && eq(l1, l2) && l1 - f1 >= 0.5 && l1 > f1 * 1.02) priceChange = { from: f1, to: l1 };
   }
-  const next = last.date + Math.round(cadence.days) * DAY;
+  const next = addCadence(last.date, cadence.id);
   const active = last.date + cadence.days * 1.5 * DAY + 7 * DAY >= end;
   const category = group.known ? group.known.cat : 'other';
   const confidence = analysis.score >= 0.95 && (analysis.count >= 3 || group.known) ? 'high' : 'medium';
@@ -171,6 +181,7 @@ function buildItem(group, txs, analysis, end, variable) {
     id: `${group.key}|${Math.round(amount * 100)}|${cadence.id}`,
     name: group.name,
     category,
+    kind: (group.known && group.known.kind) || null,
     subscription: SUBSCRIPTION_CATEGORIES.has(category),
     url: group.known && !group.known.generic ? group.known.url || '' : '',
     cadence: cadence.id,
@@ -231,6 +242,7 @@ export function detectRecurring(transactions) {
       const a = analyzeDates(g.txs.map((t) => t.date));
       if (a) found.push(buildItem(g, g.txs, a, end, true));
     }
+    for (const item of found) markTrial(item, g.txs);
     items.push(...found);
     if (!found.length && knownSub && SUBSCRIPTION_CATEGORIES.has(g.known.cat)) {
       const lastTx = g.txs.reduce((a, b) => (b.date > a.date ? b : a));
@@ -246,9 +258,47 @@ export function detectRecurring(transactions) {
     }
   }
 
+  // "New" only means something if the statement reaches back well before it.
+  if (end - start >= 120 * DAY) {
+    for (const item of items) {
+      item.isNew = item.active && item.first - start > 60 * DAY && end - item.first <= 75 * DAY;
+    }
+  }
+
   items.sort((a, b) => b.yearly - a.yearly);
   maybe.sort((a, b) => b.amount - a.amount);
   return { items, maybe, range: { start, end }, count: txs.length };
+}
+
+// A tiny charge shortly before a subscription starts is a paid trial or a card
+// check. Either way, the user signed up for a trial that is now a real plan.
+function markTrial(item, groupTxs) {
+  const inSeries = new Set(item.transactions.map((t) => t.date));
+  const trial = groupTxs
+    .filter((t) => !inSeries.has(t.date) && Math.abs(t.amount) <= 1.5 && Math.abs(t.amount) < item.amount * 0.3)
+    .filter((t) => t.date < item.first && item.first - t.date <= 45 * DAY)
+    .sort((a, b) => b.date - a.date)[0];
+  item.trial = trial ? { date: trial.date, amount: Math.abs(trial.amount) } : null;
+}
+
+// Several services doing the same job. Video gets a higher bar, since two
+// streaming services is normal and three starts to add up.
+const OVERLAP_MIN = { video: 3 };
+
+export function findOverlaps(items) {
+  const byKind = new Map();
+  for (const i of items) {
+    if (!i.active || !i.kind) continue;
+    if (!byKind.has(i.kind)) byKind.set(i.kind, []);
+    byKind.get(i.kind).push(i);
+  }
+  const out = [];
+  for (const [kind, list] of byKind) {
+    const names = [...new Set(list.map((i) => i.name))];
+    if (names.length < (OVERLAP_MIN[kind] || 2)) continue;
+    out.push({ kind, names, ids: list.map((i) => i.id), yearly: list.reduce((a, i) => a + i.yearly, 0) });
+  }
+  return out.sort((a, b) => b.yearly - a.yearly);
 }
 
 export function summarize(items) {
